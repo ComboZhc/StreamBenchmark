@@ -10,4 +10,6 @@ storm jar storm-sentiment-0.1.jar chao.cmu.capstone.SentimentTopology <zkhosts> 
 cd ~/spark-1.5.1-bin-hadoop2.6/ec2
 ./spark-ec2 --key-pair=majd --identity-file=majd.pem --region=us-east-1 --instance-type=m3.medium -s 1 launch capstone
 
-bin/spark-submit --class chao.cmu.capstone.SparkStreamingJob --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-sentiment-0.1.jar <zhhost> <topic>
+bin/spark-submit --class chao.cmu.capstone.SparkStreamingJob --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-sentiment-0.1.jar <broker> <topic>
+
+172.31.34.116:9092 c15
