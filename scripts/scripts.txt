@@ -4,3 +4,10 @@ nohup bin/kafka-server-start.sh config/server.properties &>/tmp/kafka.log &
 
 cd ~/storm-deploy-alternative
 java -jar target/storm-deploy-alternative-1.jar deploy capstone
+
+storm jar storm-sentiment-0.1.jar chao.cmu.capstone.SentimentTopology <zkhosts> <topics>
+
+cd ~/spark-1.5.1-bin-hadoop2.6/ec2
+./spark-ec2 --key-pair=majd --identity-file=majd.pem --region=us-east-1 --instance-type=m3.medium -s 1 launch capstone
+
+bin/spark-submit --class chao.cmu.capstone.SparkStreamingJob --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-sentiment-0.1.jar <zhhost> <topic>

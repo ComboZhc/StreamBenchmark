@@ -11,6 +11,9 @@ import org.apache.kafka.clients.producer.*;
 import twitter4j.JSONException;
 import twitter4j.JSONObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -46,6 +49,7 @@ public class LoadGenerator {
                 .build();
         client.connect();
         int count = 0;
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         while (!client.isDone()) {
             try {
                 String msg = queue.take();
@@ -55,6 +59,8 @@ public class LoadGenerator {
                     ++count;
                     if (count % 100 == 0) {
                         System.out.println("Emitted " + count + " tweets");
+                        Calendar cal = Calendar.getInstance();
+                        System.out.println(dateFormat.format(cal.getTime()));
                     }
                 }
             } catch (ExecutionException e) {
