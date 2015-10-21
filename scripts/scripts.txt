@@ -1,0 +1,6 @@
+cd ~/kafka_2.10-0.8.2.0/
+nohup bin/zookeeper-server-start.sh config/zookeeper.properties &>/tmp/zk.log &
+nohup bin/kafka-server-start.sh config/server.properties &>/tmp/kafka.log &
+
+cd ~/storm-deploy-alternative
+java -jar target/storm-deploy-alternative-1.jar deploy capstone
