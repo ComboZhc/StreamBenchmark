@@ -16,11 +16,9 @@ public class WindowStats extends TimerTask {
     private long totalLatency = 0;
     private int totalBytes = 0;
     private final Timer timer = new Timer();
-    private final long period;
     private final List<WindowListener> listeners = new LinkedList<>();
 
-    public WindowStats(long period) {
-        this.period = period;
+    public WindowStats() {
     }
 
     public void addListener(WindowListener listener) {
@@ -32,7 +30,7 @@ public class WindowStats extends TimerTask {
     }
 
     public void start() {
-        timer.scheduleAtFixedRate(this, 0, period);
+        timer.scheduleAtFixedRate(this, 0, 1000);
     }
 
     public synchronized void report(long latency, int bytes) {

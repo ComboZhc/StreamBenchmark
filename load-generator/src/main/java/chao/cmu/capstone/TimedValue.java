@@ -3,20 +3,18 @@ package chao.cmu.capstone;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class WindowValue extends TimerTask {
+public class TimedValue extends TimerTask {
     private int[] values;
     private long[] times;
     private long sumTime;
-    private long period;
     private Timer timer = new Timer();
     private int value;
     private long start;
 
-    public WindowValue(int[] values, long[] times, long period) {
+    public TimedValue(int[] values, long[] times) {
         this.values = values;
         this.times = times;
         this.sumTime = 0;
-        this.period = period;
         for (long time : times)
             this.sumTime += time;
     }
@@ -28,7 +26,7 @@ public class WindowValue extends TimerTask {
     public void start() {
         start = System.currentTimeMillis();
         value = values[0];
-        timer.scheduleAtFixedRate(this, 0, period);
+        timer.scheduleAtFixedRate(this, 0, 100);
     }
 
     @Override

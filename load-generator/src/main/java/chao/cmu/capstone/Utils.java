@@ -9,6 +9,8 @@ import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import twitter4j.JSONException;
+import twitter4j.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,4 +44,12 @@ public class Utils {
         return new KafkaProducer<>(configs);
     }
 
+    public static boolean isTweet(String msg) {
+        try {
+            JSONObject object = new JSONObject(msg);
+            return !object.isNull("text");
+        } catch (JSONException e) {
+            return false;
+        }
+    }
 }

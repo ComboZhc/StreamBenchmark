@@ -5,8 +5,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.JSONException;
-import twitter4j.JSONObject;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -28,7 +26,7 @@ public class IdentityLoadGenerator {
         client.connect();
 
         boolean started = false;
-        WindowStats stats = new WindowStats(1000);
+        WindowStats stats = new WindowStats();
 
         while (!client.isDone()) {
             try {
@@ -37,14 +35,11 @@ public class IdentityLoadGenerator {
                     started = true;
                     stats.start();
                 }
-                JSONObject json = new JSONObject(msg);
-                if (!json.isNull("text")) {
+                if (Utils.isTweet(msg)) {
                     producer.send(new ProducerRecord<String, String>(topic, msg), stats.next(msg.length()));
                 }
             } catch (InterruptedException e) {
                 logger.error("Interrupted", e);
-            } catch (JSONException e) {
-                logger.error("JSON Parse Error", e);
             }
         }
     }

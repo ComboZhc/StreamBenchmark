@@ -1,17 +1,23 @@
+# Run Kafka
 cd ~/kafka_2.10-0.8.2.0/
 nohup bin/zookeeper-server-start.sh config/zookeeper.properties &>/tmp/zk.log &
 nohup bin/kafka-server-start.sh config/server.properties &>/tmp/kafka.log &
 
+# Run LG
 java -cp load-generator-0.1.jar chao.cmu.capstone.IdentityLoadGenerator <brokers> <topic>
+java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 10
+java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 10,30,+10,30
+java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 500
+java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 500,30,500,1,+2000,10,+0,1
 
+# Run Storm
 cd ~/storm-deploy-alternative
 java -jar target/storm-deploy-alternative-1.jar deploy capstone
 
 storm jar storm-sentiment-0.1.jar chao.cmu.capstone.SentimentTopology <zkhosts> <topics>
 
+# Run Spark
 cd ~/spark-1.5.1-bin-hadoop2.6/ec2
 ./spark-ec2 --key-pair=majd --identity-file=majd.pem --region=us-east-1 --instance-type=m3.medium -s 1 launch capstone
 
 bin/spark-submit --class chao.cmu.capstone.SparkStreamingJob --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-sentiment-0.1.jar <broker> <topic>
-
-172.31.34.116:9092 c15

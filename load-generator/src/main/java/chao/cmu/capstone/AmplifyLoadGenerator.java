@@ -5,8 +5,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import twitter4j.JSONException;
-import twitter4j.JSONObject;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -59,12 +57,12 @@ public class AmplifyLoadGenerator {
         BlockingQueue<String> queue = new LinkedBlockingQueue<>();
         Client client = Utils.getTwitterClient(queue);
         client.connect();
-        final WindowValue windowValue = new WindowValue(amps, times, 100);
-        WindowStats stats = new WindowStats(1000);
+        final TimedValue timedValue = new TimedValue(amps, times);
+        WindowStats stats = new WindowStats();
         stats.addListener(new WindowListener() {
             @Override
             public void onWindow() {
-                logger.info("amplify = {}", windowValue.getValue());
+                logger.info("amplify = {}", timedValue.getValue());
             }
         });
         boolean started = false;
@@ -75,18 +73,15 @@ public class AmplifyLoadGenerator {
                 if (!started) {
                     started = true;
                     stats.start();
-                    windowValue.start();
+                    timedValue.start();
                 }
-                JSONObject json = new JSONObject(msg);
-                if (!json.isNull("text")) {
-                    for (int i = 0; i < windowValue.getValue(); i++) {
+                if (Utils.isTweet(msg)) {
+                    for (int i = 0; i < timedValue.getValue(); i++) {
                         producer.send(new ProducerRecord<String, String>(topic, msg), stats.next(msg.length()));
                     }
                 }
             } catch (InterruptedException e) {
                 logger.error("Interrupted", e);
-            } catch (JSONException e) {
-                logger.error("JSON Parse Error", e);
             }
         }
     }
