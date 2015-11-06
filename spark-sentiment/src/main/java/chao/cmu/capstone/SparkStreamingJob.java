@@ -38,6 +38,7 @@ public class SparkStreamingJob {
 
         HashMap<String, String> kafkaParams = new HashMap<String, String>();
         kafkaParams.put("bootstrap.servers", brokers);
+        kafkaParams.put("auto.offset.reset", "largest");
 
         JavaPairInputDStream<String, String> messages = KafkaUtils.createDirectStream(
                 jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, kafkaParams, topicSet);
