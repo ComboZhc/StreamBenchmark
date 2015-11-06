@@ -1,20 +1,26 @@
+# Ports
+zk 2181
+kafka 9092
+
 # Run Kafka
 cd ~/kafka_2.10-0.8.2.0/
 nohup bin/zookeeper-server-start.sh config/zookeeper.properties &>/tmp/zk.log &
 nohup bin/kafka-server-start.sh config/server.properties &>/tmp/kafka.log &
 
 # Run LG
-java -cp load-generator-0.1.jar chao.cmu.capstone.IdentityLoadGenerator <brokers> <topic>
-java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 10
-java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 10,30,+10,30
-java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 500
-java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 500,30,500,1,+2000,10,+0,1
+cd ~/
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.IdentityLoadGenerator <brokers> <topic> 60 &> lg.log &
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 60 20 &> lg.log &
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 120 10,30,+20,30 &> lg.log &
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 60 1000 &> lg.log &
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 120 & 500,30,500,0,+2000,10,+0,0 &> lg.log &
 
 # Run Storm
 cd ~/storm-deploy-alternative
 java -jar target/storm-deploy-alternative-1.jar deploy capstone
 
-storm jar storm-sentiment-0.1.jar chao.cmu.capstone.SentimentTopology <zkhosts> <topics>
+storm jar storm-sentiment-0.1.jar chao.cmu.capstone.Single <zkhosts> <topics> <works> <hint> <func>
+storm jar storm-sentiment-0.1.jar chao.cmu.capstone.TSingle <zkhosts> <topics> <works> <hint> <func> 
 
 # Run Spark
 cd ~/spark-1.5.1-bin-hadoop2.6/ec2

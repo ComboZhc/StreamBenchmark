@@ -41,6 +41,9 @@ public class Utils {
         configs.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         configs.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         configs.put("client.id", clientId);
+        // This will impact producer's latency
+        configs.put("max.in.flight.requests.per.connection", 1000);
+        configs.put("send.buffer.bytes", 1000 * 1024);
         return new KafkaProducer<>(configs);
     }
 

@@ -7,20 +7,15 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class IdentityLoadGenerator {
+public class TwitterStats {
     public static void main(String[] args) throws InterruptedException {
-        if (args.length < 3) {
-            System.out.println("Usage: <brokers> <topic> <time>");
+        if (args.length < 1) {
+            System.out.println("Usage: <time>");
             System.exit(-1);
         }
-        String brokers = args[0];
-        String topic = args[1];
-        long duration = Long.valueOf(args[2]) * 1000;
-        System.out.println(String.format("Brokers = %s", brokers));
-        System.out.println(String.format("Topic = %s", topic));
+        long duration = Long.valueOf(args[0]) * 1000;
         System.out.println(String.format("Duration = %d seconds", duration / 1000));
 
-        KafkaProducer<String, String> producer = Utils.getKafkaProducer(brokers, IdentityLoadGenerator.class.getName());
         BlockingQueue<String> queue = new LinkedBlockingQueue<>();
         Client client = Utils.getTwitterClient(queue);
         client.connect();
@@ -32,12 +27,10 @@ public class IdentityLoadGenerator {
         while (!stats.stopped()) {
             if (Utils.isTweet(msg)) {
                 stats.onSource();
-                producer.send(new ProducerRecord<String, String>(topic, msg), stats.onSend(msg.length()));
             }
             msg = queue.take();
         }
         stats.printTotal();
         client.stop();
-        producer.close();
     }
 }

@@ -3,18 +3,14 @@ package chao.cmu.capstone;
 import com.twitter.hbc.core.Client;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class AmplifyLoadGenerator {
-    private final static Logger logger = LoggerFactory.getLogger(AmplifyLoadGenerator.class);
-
-    public static void main(String[] args) {
-        if (args.length < 3) {
-            System.out.println("Usage: <brokers> <topic> <amps>");
+    public static void main(String[] args) throws InterruptedException {
+        if (args.length < 4) {
+            System.out.println("Usage: <brokers> <topic> <time> <amps>");
             System.out.println("<amps> could be a single number <amp>");
             System.out.println("<amps> could also be a time series of number <amp1>,<time1>,<amp2>,<time2>...");
             System.out.println("<amp> could be either a number or +/- number");
@@ -23,7 +19,8 @@ public class AmplifyLoadGenerator {
         }
         String brokers = args[0];
         String topic = args[1];
-        String[] symbols = args[2].split(",");
+        long duration = Long.valueOf(args[2]) * 1000;
+        String[] symbols = args[3].split(",");
         if (symbols.length == 1) {
             symbols = new String[] {symbols[0], "1"};
         }
@@ -52,37 +49,34 @@ public class AmplifyLoadGenerator {
             lastAmp = currAmp;
             times[i] = Long.valueOf(symbols[i * 2 + 1]) * 1000;
         }
+        System.out.println(String.format("Brokers = %s", brokers));
+        System.out.println(String.format("Topic = %s", topic));
+        System.out.println(String.format("Duration = %d seconds", duration / 1000));
+        System.out.println(String.format("Pattern = %s", args[3]));
 
         KafkaProducer<String, String> producer = Utils.getKafkaProducer(brokers, AmplifyLoadGenerator.class.getName());
         BlockingQueue<String> queue = new LinkedBlockingQueue<>();
         Client client = Utils.getTwitterClient(queue);
         client.connect();
-        final TimedValue timedValue = new TimedValue(amps, times);
-        WindowStats stats = new WindowStats();
-        stats.addListener(new WindowListener() {
-            @Override
-            public void onWindow() {
-                logger.info("amplify = {}", timedValue.getValue());
-            }
-        });
+        WindowStats stats = new WindowStats(duration);
+        TimedValue timedValue = new TimedValue(amps, times, stats, "Amplification");
         boolean started = false;
 
-        while (!client.isDone()) {
-            try {
-                String msg = queue.take();
-                if (!started) {
-                    started = true;
-                    stats.start();
-                    timedValue.start();
+        String msg = queue.take();
+        stats.start();
+        timedValue.start();
+        while (!stats.stopped()) {
+            if (Utils.isTweet(msg)) {
+                stats.onSource();
+                for (int i = 0; i < timedValue.getValue(); i++) {
+                    producer.send(new ProducerRecord<String, String>(topic, msg), stats.onSend(msg.length()));
                 }
-                if (Utils.isTweet(msg)) {
-                    for (int i = 0; i < timedValue.getValue(); i++) {
-                        producer.send(new ProducerRecord<String, String>(topic, msg), stats.next(msg.length()));
-                    }
-                }
-            } catch (InterruptedException e) {
-                logger.error("Interrupted", e);
             }
+            msg = queue.take();
         }
+        stats.printTotal();
+        timedValue.stop();
+        client.stop();
+        producer.close();
     }
 }
