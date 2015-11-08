@@ -7,6 +7,9 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Generate tweets from Twitter Sample Streaming API given amplification in time series
+ */
 public class AmplifyLoadGenerator {
     public static void main(String[] args) throws InterruptedException {
         if (args.length < 4) {
@@ -60,7 +63,6 @@ public class AmplifyLoadGenerator {
         client.connect();
         WindowStats stats = new WindowStats(duration);
         TimedValue timedValue = new TimedValue(amps, times, stats, "Amplification");
-        boolean started = false;
 
         String msg = queue.take();
         stats.start();

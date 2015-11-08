@@ -19,11 +19,18 @@ nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator 
 cd ~/storm-deploy-alternative
 java -jar target/storm-deploy-alternative-1.jar deploy capstone
 
-storm jar storm-sentiment-0.1.jar chao.cmu.capstone.Single <zkhosts> <topics> <works> <hint> <func>
-storm jar storm-sentiment-0.1.jar chao.cmu.capstone.TSingle <zkhosts> <topics> <works> <hint> <func> 
+storm jar storm-benchmark-0.1.jar chao.cmu.capstone.SingleStageTopology <zkhosts> <topics> <workers> <hint> <func>
+storm jar storm-benchmark-0.1.jar chao.cmu.capstone.SingleStageTridentTopology <zkhosts> <topics> <workers> <hint> <func> 
+
+grep kafka storm/logs/metrics.log
 
 # Run Spark
 cd ~/spark-1.5.1-bin-hadoop2.6/ec2
 ./spark-ec2 --key-pair=majd --identity-file=majd.pem --region=us-east-1 --instance-type=m3.medium -s 1 launch capstone
 
 bin/spark-submit --class chao.cmu.capstone.SparkStreamingJob --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-sentiment-0.1.jar <broker> <topic>
+
+# Log files
+lg: Time, Source, Sent, Th, Th in bytes, Avg lat, Avg payload, [(amp) OR (target)]
+k:  Time, Lat, Th, Lag
+s:  Time, Acked, Th, AggLat, Lat

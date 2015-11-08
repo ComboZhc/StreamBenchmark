@@ -16,13 +16,13 @@ import storm.kafka.SpoutConfig;
 import storm.kafka.StringScheme;
 import storm.kafka.ZkHosts;
 
-public class Single {
+public class SingleStageTopology {
     public static StormTopology createTopology(String zkhosts, String topic, int hint, String func) {
         SpoutConfig config = new SpoutConfig(
                 new ZkHosts(zkhosts),
                 topic,
                 "/txns",
-                Single.class.getSimpleName() + Long.toString(System.currentTimeMillis()));
+                SingleStageTopology.class.getSimpleName() + Long.toString(System.currentTimeMillis()));
         config.scheme = new SchemeAsMultiScheme(new StringScheme());
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         config.metricsTimeBucketSizeInSecs = 5;
@@ -96,7 +96,7 @@ public class Single {
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 5);
         conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
-                Single.class.getSimpleName(),
+                SingleStageTopology.class.getSimpleName(),
                 conf,
                 createTopology(zkHosts, topic, hint, func));
     }

@@ -7,6 +7,9 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Generate identity tweets from Twitter Sample Streaming API
+ */
 public class IdentityLoadGenerator {
     public static void main(String[] args) throws InterruptedException {
         if (args.length < 3) {

@@ -9,6 +9,9 @@ import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Generate tweets from Twitter Sample Streaming API given rate in time series
+ */
 public class ThroughputLoadGenerator {
     public static void main(String[] args) throws InterruptedException {
         if (args.length < 4) {
