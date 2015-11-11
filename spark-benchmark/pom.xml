@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>chao.cmu.capstone</groupId>
-    <artifactId>spark-sentiment</artifactId>
+    <artifactId>spark-benchmark</artifactId>
     <version>0.1</version>
 
     <build>
-        <sourceDirectory>src</sourceDirectory>
+        <sourceDirectory>src/main/java</sourceDirectory>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -32,7 +32,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>chao.cmu.capstone.SparkStreamingJob</mainClass>
+                                    <mainClass>chao.cmu.capstone.SingleStage</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -52,6 +52,11 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming-kafka_2.10</artifactId>
             <version>1.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>1.1.1</version>
         </dependency>
     </dependencies>
 </project>

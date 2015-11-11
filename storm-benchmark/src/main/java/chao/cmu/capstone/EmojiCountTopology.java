@@ -1,15 +1,15 @@
 package chao.cmu.capstone;
 
 import backtype.storm.Config;
-import backtype.storm.Constants;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.metric.LoggingMetricsConsumer;
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import com.vdurmont.emoji.Emoji;
+import com.vdurmont.emoji.EmojiManager;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import storm.kafka.KafkaSpout;
@@ -17,7 +17,9 @@ import storm.kafka.SpoutConfig;
 import storm.kafka.StringScheme;
 import storm.kafka.ZkHosts;
 
-public class SingleStageTopology {
+import java.util.*;
+
+public class EmojiCountTopology {
     public static StormTopology createTopology(String zkhosts, String topic, int hint, String func) {
         SpoutConfig config = new SpoutConfig(
                 new ZkHosts(zkhosts),
@@ -27,28 +29,12 @@ public class SingleStageTopology {
         config.scheme = new SchemeAsMultiScheme(new StringScheme());
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         config.metricsTimeBucketSizeInSecs = 5;
-        BaseRichBolt bolt;
-        bolt = new IdBolt();
-        if (func.startsWith("p"))
-            bolt = new ProjectBolt();
-        if (func.startsWith("s"))
-            bolt = new SampleBolt();
-        if (func.startsWith("f"))
-            bolt = new FilterBolt();
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new KafkaSpout(config), hint);
-        builder.setBolt("bolt", bolt, hint).shuffleGrouping("spout");
-        builder.setBolt("void", new TickBolt(), 1).shuffleGrouping("bolt");
+        builder.setSpout("spout", new KafkaSpout(config));
+        builder.setBolt("bolt", new ProjectBolt(), hint).shuffleGrouping("spout");
+        builder.setBolt("emoji", new EmojiBolt(), hint).shuffleGrouping("bolt");
+        builder.setBolt("count", new CountBolt(), 1).shuffleGrouping("emoji");
         return builder.createTopology();
-    }
-    public static class IdBolt extends BaseBolt {
-        @Override
-        public void execute(Tuple tuple) {
-            if (!isTickTuple(tuple)) {
-                collector.emit(tuple, new Values(tuple.getString(0)));
-                collector.ack(tuple);
-            }
-        }
     }
 
     public static class ProjectBolt extends BaseBolt {
@@ -64,50 +50,55 @@ public class SingleStageTopology {
         }
     }
 
-    public static class SampleBolt extends BaseBolt {
-        int sampleCount = 0;
-
-        @Override
-        public void execute(Tuple tuple) {
-            if (!isTickTuple(tuple)) {
-                if (sampleCount % 10 == 0) {
-                    collector.emit(tuple, new Values(tuple.getString(0)));
-                }
-                sampleCount++;
-                collector.ack(tuple);
+    public static List<String> getEmojiAliases(String str) {
+        List<String> aliases = new ArrayList<>();
+        Collection<Emoji> emojis = EmojiManager.getAll();
+        for (Emoji emoji : emojis) {
+            int pos = str.indexOf(emoji.getUnicode());
+            while (pos >= 0) {
+                aliases.add(emoji.getAliases().get(0));
+                pos = str.indexOf(emoji.getUnicode(), pos + emoji.getUnicode().length());
             }
         }
+        return aliases;
     }
 
-    public static class FilterBolt extends BaseBolt {
+    public static class EmojiBolt extends BaseBolt {
         @Override
         public void execute(Tuple tuple) {
             if (!isTickTuple(tuple)) {
                 String message = tuple.getString(0);
-                JSONObject object = (JSONObject) JSONValue.parse(message);
-                if ("en".equals(object.get("lang"))) {
-                    collector.emit(tuple, new Values(tuple.getString(0)));
+                for (String alias : getEmojiAliases(message)) {
+                    collector.emit(tuple, new Values(alias));
                 }
                 collector.ack(tuple);
             }
         }
     }
 
-    public static class TickBolt extends BaseBolt {
-
-        private volatile int count = 0;
-
+    public static class CountBolt extends BaseBolt {
+        public HashMap<String, Integer> counts;
         @Override
         public void execute(Tuple tuple) {
             if (isTickTuple(tuple)) {
-                System.out.println(count);
-                count = 0;
+                counts.clear();
+                for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+                    System.out.print(entry.getKey());
+                    System.out.print(' ');
+                    System.out.println(entry.getValue());
+                }
             } else {
-                ++count;
+                String message = tuple.getString(0);
+                if (counts.containsKey(message)) {
+                    counts.put(message, 1);
+                } else {
+                    counts.put(message, counts.get(message) + 1);
+                }
                 collector.ack(tuple);
             }
         }
     }
+
 
     public static void main(String[] args) throws Exception {
         String zkHosts = args[0];
@@ -118,7 +109,6 @@ public class SingleStageTopology {
         Config conf = new Config();
         conf.setNumWorkers(workers);
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 5);
-        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
         conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
                 SingleStageTopology.class.getSimpleName(),

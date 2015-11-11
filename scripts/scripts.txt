@@ -28,7 +28,7 @@ grep kafka storm/logs/metrics.log
 cd ~/spark-1.5.1-bin-hadoop2.6/ec2
 ./spark-ec2 --key-pair=majd --identity-file=majd.pem --region=us-east-1 --instance-type=m3.medium -s 1 launch capstone
 
-bin/spark-submit --class chao.cmu.capstone.SparkStreamingJob --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-sentiment-0.1.jar <broker> <topic>
+spark/bin/spark-submit --class chao.cmu.capstone.SingleStage --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-benchmark-0.1.jar <broker> <topic> <func>
 
 # Log files
 lg: Time, Source, Sent, Th, Th in bytes, Avg lat, Avg payload, [(amp) OR (target)]
