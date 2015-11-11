@@ -120,7 +120,7 @@ public class SingleStage {
         conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
         conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
-                SingleStage.class.getSimpleName() + "func",
+                SingleStage.class.getSimpleName() + func,
                 conf,
                 createTopology(zkHosts, topic, hint, func));
     }

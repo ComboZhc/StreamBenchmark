@@ -19,8 +19,10 @@ nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator 
 cd ~/storm-deploy-alternative
 java -jar target/storm-deploy-alternative-1.jar deploy capstone
 
-storm jar storm-benchmark-0.1.jar chao.cmu.capstone.SingleStageTopology <zkhosts> <topics> <workers> <hint> <func>
-storm jar storm-benchmark-0.1.jar chao.cmu.capstone.SingleStageTridentTopology <zkhosts> <topics> <workers> <hint> <func> 
+storm jar storm-benchmark-0.1.jar chao.cmu.capstone.SingleStage <zkhosts> <topics> <workers> <hint> <func>
+storm jar storm-benchmark-0.1.jar chao.cmu.capstone.EmojiCount <zkhosts> <topics> <workers> <hint>
+storm jar storm-benchmark-0.1.jar chao.cmu.capstone.TridentSingleStage <zkhosts> <topics> <workers> <hint> <func>
+storm jar storm-benchmark-0.1.jar chao.cmu.capstone.TridentEmojiCount <zkhosts> <topics> <workers> <hint>
 
 grep kafka storm/logs/metrics.log
 

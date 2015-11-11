@@ -14,7 +14,7 @@ public class BaseCountFunction extends BaseFunction {
     @Override
     public void prepare(Map conf, TridentOperationContext context) {
         this.count = new CountMetric();
-        context.registerMetric("count", this.count, 5);
+        context.registerMetric("message-count", this.count, 5);
     }
 
     @Override

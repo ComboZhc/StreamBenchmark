@@ -30,7 +30,7 @@ public class EmojiCount {
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         config.metricsTimeBucketSizeInSecs = 5;
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new KafkaSpout(config));
+        builder.setSpout("spout", new KafkaSpout(config), hint);
         builder.setBolt("bolt", new ProjectBolt(), hint).shuffleGrouping("spout");
         builder.setBolt("emoji", new EmojiBolt(), hint).shuffleGrouping("bolt");
         builder.setBolt("count", new CountBolt(), 1).shuffleGrouping("emoji");
@@ -77,22 +77,20 @@ public class EmojiCount {
     }
 
     public static class CountBolt extends BaseBolt {
-        public HashMap<String, Integer> counts;
+        public HashMap<String, Integer> counts = new HashMap<>();
         @Override
         public void execute(Tuple tuple) {
             if (isTickTuple(tuple)) {
-                counts.clear();
                 for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                    System.out.print(entry.getKey());
-                    System.out.print(' ');
-                    System.out.println(entry.getValue());
+                    System.out.println(entry.getKey() + ' ' + entry.getValue());
                 }
+                counts.clear();
             } else {
                 String message = tuple.getString(0);
                 if (counts.containsKey(message)) {
-                    counts.put(message, 1);
-                } else {
                     counts.put(message, counts.get(message) + 1);
+                } else {
+                    counts.put(message, 1);
                 }
                 collector.ack(tuple);
             }
@@ -108,6 +106,7 @@ public class EmojiCount {
         Config conf = new Config();
         conf.setNumWorkers(workers);
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 5);
+        conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
         conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
                 EmojiCount.class.getSimpleName(),
