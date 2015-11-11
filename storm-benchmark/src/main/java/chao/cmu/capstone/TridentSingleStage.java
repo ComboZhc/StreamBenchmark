@@ -20,12 +20,12 @@ import storm.trident.operation.builtin.Count;
 import storm.trident.testing.MemoryMapState;
 import storm.trident.tuple.TridentTuple;
 
-public class SingleStageTridentTopology {
+public class TridentSingleStage {
     public static StormTopology createTopology(String zkhosts, String topic, int hint, String func) {
         TridentKafkaConfig config = new TridentKafkaConfig(
                 new ZkHosts(zkhosts),
                 topic,
-                SingleStageTridentTopology.class.getSimpleName() + Long.toString(System.currentTimeMillis()));
+                TridentSingleStage.class.getSimpleName() + Long.toString(System.currentTimeMillis()));
         config.scheme = new SchemeAsMultiScheme(new StringScheme());
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         config.metricsTimeBucketSizeInSecs = 5;
@@ -102,7 +102,7 @@ public class SingleStageTridentTopology {
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 5);
         conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
-                SingleStageTridentTopology.class.getSimpleName(),
+                TridentSingleStage.class.getSimpleName(),
                 conf,
                 createTopology(zkHosts, topic, hint, func));
     }
