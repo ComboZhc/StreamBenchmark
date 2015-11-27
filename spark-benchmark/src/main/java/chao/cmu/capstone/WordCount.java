@@ -1,7 +1,5 @@
 package chao.cmu.capstone;
 
-import com.vdurmont.emoji.Emoji;
-import com.vdurmont.emoji.EmojiManager;
 import kafka.serializer.StringDecoder;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;
@@ -18,20 +16,7 @@ import scala.Tuple2;
 
 import java.util.*;
 
-public class EmojiCount {
-    public static List<String> getEmojiAliases(String str) {
-        List<String> aliases = new ArrayList<>();
-        Collection<Emoji> emojis = EmojiManager.getAll();
-        for (Emoji emoji : emojis) {
-            int pos = str.indexOf(emoji.getUnicode());
-            while (pos >= 0) {
-                aliases.add(emoji.getAliases().get(0));
-                pos = str.indexOf(emoji.getUnicode(), pos + emoji.getUnicode().length());
-            }
-        }
-        return aliases;
-    }
-
+public class WordCount {
     public static void main(String[] args) {
         if (args.length < 2) {
             System.err.println("Usage: <brokers> <topic>");
@@ -42,9 +27,9 @@ public class EmojiCount {
         String topic = args[1];
 
         SparkConf sparkConf = new SparkConf()
-                .setAppName("spark-benchmark-emoji")
+                .setAppName("spark-benchmark-wordcount")
                 .set("spark.streaming.backpressure.enabled", "true")
-                .set("spark.streaming.ui.retainedBatches", "1000");
+                .set("spark.streaming.ui.retainedBatches", "300");
         JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, Durations.seconds(1));
 
         HashSet<String> topicSet = new HashSet<>();
@@ -66,14 +51,14 @@ public class EmojiCount {
             }
         });
 
-        JavaDStream<String> emojis = lines.flatMap(new FlatMapFunction<String, String>() {
+        JavaDStream<String> words = lines.flatMap(new FlatMapFunction<String, String>() {
             @Override
             public Iterable<String> call(String s) throws Exception {
-                return getEmojiAliases(s);
+                return Arrays.asList(s.split("\\s+"));
             }
         });
 
-        JavaPairDStream<String, Long> counts = emojis.countByValue();
+        JavaPairDStream<String, Long> counts = words.countByValue();
         counts.print();
         jssc.start();
         jssc.awaitTermination();

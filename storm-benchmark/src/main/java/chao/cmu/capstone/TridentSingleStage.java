@@ -103,7 +103,7 @@ public class TridentSingleStage {
         conf.setNumWorkers(workers);
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 5);
         conf.put(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS, 1000);
-        conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
+        conf.registerMetricsConsumer(KafkaMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
                 TridentSingleStage.class.getSimpleName() + func,
                 conf,

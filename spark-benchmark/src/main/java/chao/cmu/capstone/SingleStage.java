@@ -28,7 +28,8 @@ public class SingleStage {
 
         SparkConf sparkConf = new SparkConf()
                 .setAppName("spark-benchmark-" + func)
-                .set("spark.eventLog.enabled", "true");
+                .set("spark.streaming.backpressure.enabled", "true")
+                .set("spark.streaming.ui.retainedBatches", "300");
         JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, Durations.seconds(1));
 
         HashSet<String> topicSet = new HashSet<>();
@@ -41,18 +42,18 @@ public class SingleStage {
         JavaPairInputDStream<String, String> messages = KafkaUtils.createDirectStream(
                 jssc, String.class, String.class, StringDecoder.class, StringDecoder.class, kafkaParams, topicSet);
 
-        JavaDStream<String> lines;
+        JavaDStream<Long> counts;
         if (func.startsWith("p")) {
-            lines = messages.map(new Function<Tuple2<String, String>, String>() {
+            counts = messages.map(new Function<Tuple2<String, String>, String>() {
                 @Override
                 public String call(Tuple2<String, String> tuple2) {
                     JSONObject object = (JSONObject) JSONValue.parse(tuple2._2());
                     String text = (String)object.get("text");
                     return text;
                 }
-            });
+            }).count();
         } else if (func.startsWith("s")) {
-            lines = messages.filter(new Function<Tuple2<String, String>, Boolean>() {
+            counts = messages.filter(new Function<Tuple2<String, String>, Boolean>() {
                 int i = 0;
 
                 @Override
@@ -61,34 +62,25 @@ public class SingleStage {
                     ++i;
                     return ret;
                 }
-            }).map(new Function<Tuple2<String, String>, String>() {
-                @Override
-                public String call(Tuple2<String, String> tuple2) {
-                    return tuple2._2();
-                }
-            });
+            }).count();
         } else if (func.startsWith("f")) {
-            lines = messages.filter(new Function<Tuple2<String, String>, Boolean>() {
+            counts = messages.filter(new Function<Tuple2<String, String>, Boolean>() {
                 @Override
                 public Boolean call(Tuple2<String, String> tuple2) throws Exception {
                     JSONObject object = (JSONObject) JSONValue.parse(tuple2._2());
                     return "en".equals(object.get("lang"));
                 }
-            }).map(new Function<Tuple2<String, String>, String>() {
-                @Override
-                public String call(Tuple2<String, String> tuple2) {
-                    return tuple2._2();
-                }
-            });
+            }).count();
+        } else if (func.startsWith("v")) {
+            counts = messages.count();
         } else {
-            lines = messages.map(new Function<Tuple2<String, String>, String>() {
+            counts = messages.map(new Function<Tuple2<String, String>, String>() {
                 @Override
                 public String call(Tuple2<String, String> tuple2) {
                     return tuple2._2();
                 }
-            });
+            }).count();
         }
-        JavaDStream<Long> counts = lines.count();
         counts.print();
         jssc.start();
         jssc.awaitTermination();

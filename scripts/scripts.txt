@@ -13,7 +13,13 @@ nohup java -cp load-generator-0.1.jar chao.cmu.capstone.IdentityLoadGenerator <b
 nohup java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 60 20 &> lg.log &
 nohup java -cp load-generator-0.1.jar chao.cmu.capstone.AmplifyLoadGenerator <brokers> <topic> 120 10,30,+20,30 &> lg.log &
 nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 60 1000 &> lg.log &
-nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 120 & 500,30,500,0,+2000,10,+0,0 &> lg.log &
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 120  500,30,500,0,+2000,10,+0,0 &> lg.log &
+
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 1800 500 &> base.log &
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 720 0,30,133,30,500,30,1000,30,1500,30,1866,30,2000,30,1866,30,1500,30,1000,30,500,30,133,30 &> pv.log &
+
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 1800 500 &> base.log &
+nohup java -cp load-generator-0.1.jar chao.cmu.capstone.ThroughputLoadGenerator <brokers> <topic> 720 0,120,0,0,2500,30,2500,0,0,90 &> burst.log &
 
 # Run Storm
 cd ~/storm-deploy-alternative
@@ -21,6 +27,7 @@ java -jar target/storm-deploy-alternative-1.jar deploy capstone
 
 storm jar storm-benchmark-0.1.jar chao.cmu.capstone.SingleStage <zkhosts> <topics> <workers> <hint> <func>
 storm jar storm-benchmark-0.1.jar chao.cmu.capstone.EmojiCount <zkhosts> <topics> <workers> <hint>
+storm jar storm-benchmark-0.1.jar chao.cmu.capstone.WordCount <zkhosts> <topics> <workers> <hint>
 storm jar storm-benchmark-0.1.jar chao.cmu.capstone.TridentSingleStage <zkhosts> <topics> <workers> <hint> <func>
 storm jar storm-benchmark-0.1.jar chao.cmu.capstone.TridentEmojiCount <zkhosts> <topics> <workers> <hint>
 
@@ -28,9 +35,14 @@ grep kafka storm/logs/metrics.log
 
 # Run Spark
 cd ~/spark-1.5.1-bin-hadoop2.6/ec2
-./spark-ec2 --key-pair=majd --identity-file=majd.pem --region=us-east-1 --instance-type=m3.medium -s 1 launch capstone
+./spark-ec2 --key-pair=majd --identity-file=majd.pem --region=us-east-1 --instance-type=m3.medium --zone=us-east-1b -s 2 launch capstone
 
 spark/bin/spark-submit --class chao.cmu.capstone.SingleStage --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-benchmark-0.1.jar <broker> <topic> <func>
+spark/bin/spark-submit --class chao.cmu.capstone.EmojiCount --master spark://ec2-54-165-94-20.compute-1.amazonaws.com:7077 spark-benchmark-0.1.jar <broker> <topic>
+spark/bin/spark-submit --class chao.cmu.capstone.WordCount --master spark://ec2-52-91-70-108.compute-1.amazonaws.com:7077 spark-benchmark-0.1.jar <broker> <topic>
+
+a = Array()
+$("#completed-batches-table td").each(function(){a.push($(this).attr('sorttable_customkey'));});
 
 # Log files
 lg: Time, Source, Sent, Th, Th in bytes, Avg lat, Avg payload, [(amp) OR (target)]

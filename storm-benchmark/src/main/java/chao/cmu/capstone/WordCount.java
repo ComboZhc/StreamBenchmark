@@ -8,8 +8,6 @@ import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
-import com.vdurmont.emoji.Emoji;
-import com.vdurmont.emoji.EmojiManager;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import storm.kafka.KafkaSpout;
@@ -19,21 +17,21 @@ import storm.kafka.ZkHosts;
 
 import java.util.*;
 
-public class EmojiCount {
+public class WordCount {
     public static StormTopology createTopology(String zkhosts, String topic, int hint) {
         SpoutConfig config = new SpoutConfig(
                 new ZkHosts(zkhosts),
                 topic,
                 "/txns",
-                EmojiCount.class.getSimpleName() + Long.toString(System.currentTimeMillis()));
+                WordCount.class.getSimpleName() + Long.toString(System.currentTimeMillis()));
         config.scheme = new SchemeAsMultiScheme(new StringScheme());
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         config.metricsTimeBucketSizeInSecs = 5;
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new KafkaSpout(config), hint);
         builder.setBolt("bolt", new ProjectBolt(), hint).shuffleGrouping("spout");
-        builder.setBolt("emoji", new EmojiBolt(), hint).shuffleGrouping("bolt");
-        builder.setBolt("count", new CountBolt(), 1).shuffleGrouping("emoji");
+        builder.setBolt("word", new WordBolt(), hint).shuffleGrouping("bolt");
+        builder.setBolt("count", new CountBolt(), 1).shuffleGrouping("word");
         return builder.createTopology();
     }
 
@@ -50,26 +48,13 @@ public class EmojiCount {
         }
     }
 
-    public static List<String> getEmojiAliases(String str) {
-        List<String> aliases = new ArrayList<>();
-        Collection<Emoji> emojis = EmojiManager.getAll();
-        for (Emoji emoji : emojis) {
-            int pos = str.indexOf(emoji.getUnicode());
-            while (pos >= 0) {
-                aliases.add(emoji.getAliases().get(0));
-                pos = str.indexOf(emoji.getUnicode(), pos + emoji.getUnicode().length());
-            }
-        }
-        return aliases;
-    }
-
-    public static class EmojiBolt extends BaseBolt {
+    public static class WordBolt extends BaseBolt {
         @Override
         public void execute(Tuple tuple) {
             if (!isTickTuple(tuple)) {
                 String message = tuple.getString(0);
-                for (String alias : getEmojiAliases(message)) {
-                    collector.emit(tuple, new Values(alias));
+                for (String msg : message.split("\\s+")) {
+                    collector.emit(tuple, new Values(msg));
                 }
                 collector.ack(tuple);
             }
@@ -110,7 +95,7 @@ public class EmojiCount {
         conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 1000);
         conf.registerMetricsConsumer(KafkaMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
-                EmojiCount.class.getSimpleName(),
+                WordCount.class.getSimpleName(),
                 conf,
                 createTopology(zkHosts, topic, hint));
     }

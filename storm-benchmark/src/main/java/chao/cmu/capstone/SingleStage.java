@@ -26,6 +26,12 @@ public class SingleStage {
         config.scheme = new SchemeAsMultiScheme(new StringScheme());
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         config.metricsTimeBucketSizeInSecs = 5;
+        if (func.startsWith("v")) {
+            TopologyBuilder builder = new TopologyBuilder();
+            builder.setSpout("spout", new KafkaSpout(config), hint);
+            builder.setBolt("void", new TickBolt(), 1).shuffleGrouping("spout");
+            return builder.createTopology();
+        }
         BaseRichBolt bolt;
         bolt = new IdBolt();
         if (func.startsWith("p"))
@@ -118,7 +124,8 @@ public class SingleStage {
         conf.setNumWorkers(workers);
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 5);
         conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
-        conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
+        conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, 1000);
+        conf.registerMetricsConsumer(KafkaMetricsConsumer.class);
         StormSubmitter.submitTopologyWithProgressBar(
                 SingleStage.class.getSimpleName() + func,
                 conf,
